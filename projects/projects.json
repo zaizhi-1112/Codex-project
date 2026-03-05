@@ -1,0 +1,12 @@
+﻿[
+  {
+    "name": "AI 新闻助手",
+    "slug": "ai-news-assistant",
+    "summary": "抓取多信源新闻并筛选、去重、生成精选摘要。",
+    "stack": "HTML/CSS/JavaScript",
+    "status": "stable",
+    "path": "./projects/ai-news-assistant/",
+    "entry": "./projects/ai-news-assistant/index.html",
+    "readme": "./projects/ai-news-assistant/README.md"
+  }
+]

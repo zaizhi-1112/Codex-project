@@ -1,133 +1,151 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI新闻助手</title>
-  <link rel="stylesheet" href="./styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Codex 工具项目总览</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --primary: #0f766e;
+      --primary-soft: #ccfbf1;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 85% 10%, #dbeafe 0%, transparent 30%),
+        radial-gradient(circle at 15% 95%, #ccfbf1 0%, transparent 35%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 38px 20px 56px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      letter-spacing: .2px;
+    }
+    .sub {
+      margin: 10px 0 28px;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--primary);
+      background: var(--primary-soft);
+      margin-bottom: 10px;
+    }
+    .title {
+      margin: 0;
+      font-size: 18px;
+    }
+    .desc {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 44px;
+      margin: 10px 0 12px;
+    }
+    .tech {
+      font-size: 13px;
+      color: #334155;
+      margin: 0 0 14px;
+    }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    a {
+      display: inline-block;
+      text-decoration: none;
+      color: #0f172a;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 13px;
+      background: #fff;
+    }
+    a:hover { border-color: #94a3b8; }
+    .error {
+      color: #b91c1c;
+      margin-top: 16px;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="toolbar">
-      <h1>AI新闻助手</h1>
-      <div class="toolbar-actions">
-        <label class="model-picker">
-          <span>选择模型：</span>
-          <select id="modelSelect">
-            <option value="deepseek-chat">Deepseek Chat</option>
-            <option value="qwen-plus">Qwen Plus</option>
-            <option value="rules-local">规则筛选引擎（本地）</option>
-          </select>
-        </label>
-        <button id="settingsBtn" class="btn" type="button">⚙ 提示词设置</button>
-        <button id="generateBtn" class="btn btn-primary" type="button">⟳ 生成最新新闻</button>
-      </div>
-    </header>
+  <main class="container">
+    <h1>Codex 工具项目总览</h1>
+    <p class="sub">每个项目都位于独立目录，互不影响；可按需进入项目目录自取使用。</p>
+    <section id="grid" class="grid"></section>
+    <p id="error" class="error" hidden></p>
+  </main>
 
-    <p id="statusLine" class="status-line">就绪</p>
+  <script>
+    async function loadProjects() {
+      const resp = await fetch('./projects/projects.json', { cache: 'no-store' });
+      if (!resp.ok) throw new Error('读取项目清单失败');
+      return resp.json();
+    }
 
-    <main class="content-grid">
-      <section class="panel">
-        <div class="panel-header">
-          <h2>最新新闻列表</h2>
-          <label class="inline-check">
-            <input id="recentOnlyToggle" type="checkbox" checked>
-            <span>显示最近2天内的新闻</span>
-          </label>
-        </div>
-        <p id="sourceHint" class="source-hint"></p>
-        <div class="left-actions">
-          <button id="pickSelectedBtn" class="btn small" type="button">勾选加入精选</button>
-          <button id="quickPickBtn" class="btn small" type="button">一键筛选30条</button>
-          <span class="left-note">右侧输出自动翻译为中文</span>
-        </div>
-        <div id="rawEmptyState" class="empty-state">没有找到新闻</div>
-        <ul id="rawNewsList" class="news-list hidden"></ul>
-      </section>
-
-      <section class="panel">
-        <div class="panel-header">
-          <h2>AI精选新闻</h2>
-          <div class="panel-header-actions">
-            <select id="generationSelect" class="small-select">
-              <option value="">当前生成</option>
-            </select>
-            <button id="saveBtn" class="btn small" type="button">💾 保存</button>
-            <button id="copyBtn" class="btn small" type="button">📋 复制</button>
+    function renderCard(project) {
+      return `
+        <article class="card">
+          <span class="badge">${project.status || 'stable'}</span>
+          <h2 class="title">${project.name}</h2>
+          <p class="desc">${project.summary || ''}</p>
+          <p class="tech">技术栈：${project.stack || '未填写'}</p>
+          <div class="links">
+            <a href="${project.readme}" target="_blank" rel="noreferrer">项目介绍</a>
+            <a href="${project.entry}" target="_blank" rel="noreferrer">打开工具</a>
+            <a href="${project.path}" target="_blank" rel="noreferrer">项目目录</a>
           </div>
-        </div>
-        <p class="helper-line">可拖动调整顺序、删除条目或编辑内容</p>
-        <div id="selectedEmptyState" class="empty-state">点击“生成最新新闻”开始筛选</div>
-        <ol id="selectedNewsList" class="selected-list hidden"></ol>
-      </section>
-    </main>
-  </div>
+        </article>
+      `;
+    }
 
-  <dialog id="settingsDialog" class="settings-dialog">
-    <form method="dialog" id="settingsForm">
-      <h3>提示词与信源设置</h3>
-      <label class="field">
-        <span>信源列表（每行：名称|URL|权重）</span>
-        <textarea id="sourcesInput" rows="10"></textarea>
-      </label>
-      <div class="field-row">
-        <label class="field">
-          <span>额外优先关键词（逗号分隔）</span>
-          <input id="includeKeywordsInput" type="text" placeholder="如：reasoning,多模态,Agent">
-        </label>
-        <label class="field">
-          <span>额外排除关键词（逗号分隔）</span>
-          <input id="excludeKeywordsInput" type="text" placeholder="如：扫地机器人,合作伙伴招募">
-        </label>
-      </div>
-      <label class="field">
-        <span>筛选提示词（可选，仅用于保存偏好）</span>
-        <textarea id="promptTemplateInput" rows="4" placeholder="定义你自己的筛选偏好"></textarea>
-      </label>
-      <div class="dialog-sep"></div>
-      <h3 class="sub-title">模型配置（可选）</h3>
-      <div class="field-row">
-        <label class="field">
-          <span>运行模式</span>
-          <select id="modelModeSelect">
-            <option value="rules_only">仅规则筛选（无需模型，推荐）</option>
-            <option value="llm_assist">模型辅助筛选/总结</option>
-            <option value="llm_web_search">模型联网搜索 + 总结</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>接口类型</span>
-          <select id="providerSelect">
-            <option value="openai_compatible">OpenAI兼容接口</option>
-            <option value="dashscope">阿里 DashScope（Qwen）</option>
-          </select>
-        </label>
-      </div>
-      <div class="field-row">
-        <label class="field">
-          <span>Base URL</span>
-          <input id="llmBaseUrlInput" type="text" placeholder="如：https://api.openai.com/v1">
-        </label>
-        <label class="field">
-          <span>Model ID</span>
-          <input id="llmModelNameInput" type="text" placeholder="如：gpt-4.1 / qwen-plus-latest">
-        </label>
-      </div>
-      <label class="field">
-        <span>API Key</span>
-        <input id="llmApiKeyInput" type="password" autocomplete="off" placeholder="请输入你的 API Key（仅保存在浏览器本地）">
-      </label>
-      <p id="modelConfigHint" class="model-hint">
-        联网搜索模式要求“模型或平台原生支持 Web Search”。仅有普通聊天模型（如纯 deepseek-chat）通常不能直接搜索网页。
-      </p>
-      <div class="dialog-actions">
-        <button id="resetSettingsBtn" class="btn" type="button">恢复默认</button>
-        <button id="cancelSettingsBtn" class="btn" value="cancel">取消</button>
-        <button id="saveSettingsBtn" class="btn btn-primary" type="submit">保存设置</button>
-      </div>
-    </form>
-  </dialog>
-
-  <script src="./app.js" defer></script>
+    (async function init() {
+      const grid = document.getElementById('grid');
+      const error = document.getElementById('error');
+      try {
+        const projects = await loadProjects();
+        if (!Array.isArray(projects) || projects.length === 0) {
+          error.hidden = false;
+          error.textContent = '目前还没有登记项目。';
+          return;
+        }
+        grid.innerHTML = projects.map(renderCard).join('');
+      } catch (err) {
+        error.hidden = false;
+        error.textContent = `加载失败：${err.message}。请使用本地静态服务器访问。`;
+      }
+    })();
+  </script>
 </body>
 </html>

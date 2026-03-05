@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI新闻助手</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="toolbar">
+      <h1>AI新闻助手</h1>
+      <div class="toolbar-actions">
+        <label class="model-picker">
+          <span>选择模型：</span>
+          <select id="modelSelect">
+            <option value="deepseek-chat">Deepseek Chat</option>
+            <option value="qwen-plus">Qwen Plus</option>
+            <option value="rules-local">规则筛选引擎（本地）</option>
+          </select>
+        </label>
+        <button id="settingsBtn" class="btn" type="button">⚙ 提示词设置</button>
+        <button id="generateBtn" class="btn btn-primary" type="button">⟳ 生成最新新闻</button>
+      </div>
+    </header>
+
+    <p id="statusLine" class="status-line">就绪</p>
+
+    <main class="content-grid">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>最新新闻列表</h2>
+          <label class="inline-check">
+            <input id="recentOnlyToggle" type="checkbox" checked>
+            <span>显示最近2天内的新闻</span>
+          </label>
+        </div>
+        <p id="sourceHint" class="source-hint"></p>
+        <div class="left-actions">
+          <button id="pickSelectedBtn" class="btn small" type="button">勾选加入精选</button>
+          <button id="quickPickBtn" class="btn small" type="button">一键筛选30条</button>
+          <span class="left-note">右侧输出自动翻译为中文</span>
+        </div>
+        <div id="rawEmptyState" class="empty-state">没有找到新闻</div>
+        <ul id="rawNewsList" class="news-list hidden"></ul>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>AI精选新闻</h2>
+          <div class="panel-header-actions">
+            <select id="generationSelect" class="small-select">
+              <option value="">当前生成</option>
+            </select>
+            <button id="saveBtn" class="btn small" type="button">💾 保存</button>
+            <button id="copyBtn" class="btn small" type="button">📋 复制</button>
+          </div>
+        </div>
+        <p class="helper-line">可拖动调整顺序、删除条目或编辑内容</p>
+        <div id="selectedEmptyState" class="empty-state">点击“生成最新新闻”开始筛选</div>
+        <ol id="selectedNewsList" class="selected-list hidden"></ol>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="settingsDialog" class="settings-dialog">
+    <form method="dialog" id="settingsForm">
+      <h3>提示词与信源设置</h3>
+      <label class="field">
+        <span>信源列表（每行：名称|URL|权重）</span>
+        <textarea id="sourcesInput" rows="10"></textarea>
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>额外优先关键词（逗号分隔）</span>
+          <input id="includeKeywordsInput" type="text" placeholder="如：reasoning,多模态,Agent">
+        </label>
+        <label class="field">
+          <span>额外排除关键词（逗号分隔）</span>
+          <input id="excludeKeywordsInput" type="text" placeholder="如：扫地机器人,合作伙伴招募">
+        </label>
+      </div>
+      <label class="field">
+        <span>筛选提示词（可选，仅用于保存偏好）</span>
+        <textarea id="promptTemplateInput" rows="4" placeholder="定义你自己的筛选偏好"></textarea>
+      </label>
+      <div class="dialog-sep"></div>
+      <h3 class="sub-title">模型配置（可选）</h3>
+      <div class="field-row">
+        <label class="field">
+          <span>运行模式</span>
+          <select id="modelModeSelect">
+            <option value="rules_only">仅规则筛选（无需模型，推荐）</option>
+            <option value="llm_assist">模型辅助筛选/总结</option>
+            <option value="llm_web_search">模型联网搜索 + 总结</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>接口类型</span>
+          <select id="providerSelect">
+            <option value="openai_compatible">OpenAI兼容接口</option>
+            <option value="dashscope">阿里 DashScope（Qwen）</option>
+          </select>
+        </label>
+      </div>
+      <div class="field-row">
+        <label class="field">
+          <span>Base URL</span>
+          <input id="llmBaseUrlInput" type="text" placeholder="如：https://api.openai.com/v1">
+        </label>
+        <label class="field">
+          <span>Model ID</span>
+          <input id="llmModelNameInput" type="text" placeholder="如：gpt-4.1 / qwen-plus-latest">
+        </label>
+      </div>
+      <label class="field">
+        <span>API Key</span>
+        <input id="llmApiKeyInput" type="password" autocomplete="off" placeholder="请输入你的 API Key（仅保存在浏览器本地）">
+      </label>
+      <p id="modelConfigHint" class="model-hint">
+        联网搜索模式要求“模型或平台原生支持 Web Search”。仅有普通聊天模型（如纯 deepseek-chat）通常不能直接搜索网页。
+      </p>
+      <div class="dialog-actions">
+        <button id="resetSettingsBtn" class="btn" type="button">恢复默认</button>
+        <button id="cancelSettingsBtn" class="btn" value="cancel">取消</button>
+        <button id="saveSettingsBtn" class="btn btn-primary" type="submit">保存设置</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>

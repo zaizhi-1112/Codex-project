@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>图片无缝拼接工具</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f6f8;
+      --panel: #ffffff;
+      --primary: #2563eb;
+      --primary-soft: rgba(37, 99, 235, 0.08);
+      --border: #d7dbe3;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft Yahei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .app {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 24px 28px 32px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    h1,
+    h2 {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    section {
+      margin-top: 24px;
+    }
+
+    .panel {
+      display: grid;
+      gap: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      background: #f9fafb;
+    }
+
+    .upload {
+      display: grid;
+      gap: 12px;
+    }
+
+    .file-input {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .file-input input[type="file"] {
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      max-width: 100%;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      color: var(--muted);
+      background: #fff;
+      transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+      outline: none;
+    }
+
+    .drop-zone.dragover,
+    .drop-zone:focus-visible {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .controls {
+      display: grid;
+      gap: 12px;
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 24px;
+      align-items: center;
+    }
+
+    .control-row label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .control-row select,
+    .control-row input[type="number"] {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .control-row input[type="number"] {
+      width: 96px;
+    }
+
+    .control-row input[type="color"] {
+      width: 40px;
+      height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0;
+      background: #fff;
+    }
+
+    .control-row input[type="color"]:disabled,
+    .control-row input[type="number"]:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .control-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+    }
+
+    .button {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--primary);
+      color: #fff;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 120px;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .button:disabled,
+    .button.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+      transform: none;
+    }
+
+    .preview-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .preview-placeholder {
+      color: var(--muted);
+      padding: 16px;
+      text-align: center;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+    }
+
+    .preview-item {
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    .preview-item img {
+      width: 80px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .preview-info {
+      display: grid;
+      gap: 4px;
+      font-size: 13px;
+    }
+
+    .preview-info span {
+      color: var(--muted);
+    }
+
+    .preview-actions {
+      display: grid;
+      gap: 6px;
+    }
+
+    .preview-actions button {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 6px;
+      padding: 6px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .result-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    #resultCanvas {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      display: block;
+    }
+
+    .tip {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    .tip.error {
+      color: var(--danger);
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 16px;
+      }
+
+      .app {
+        padding: 20px;
+      }
+
+      .preview-item {
+        grid-template-columns: 1fr;
+      }
+
+      .preview-actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>图片无缝拼接工具</h1>
+
+    <section class="panel">
+      <div class="upload">
+        <div class="file-input">
+          <input id="fileInput" type="file" accept="image/*" multiple />
+          <button id="clearButton" class="button secondary" type="button">清空列表</button>
+        </div>
+        <div id="dropZone" class="drop-zone" tabindex="0">拖拽图片到这里，或使用上方选择文件，也可以直接按 Ctrl+V 粘贴剪贴板图片</div>
+      </div>
+
+      <div class="controls">
+        <div class="control-row">
+          <label>
+            <strong>拼接方向</strong>
+            <select id="directionSelect">
+              <option value="vertical">纵向</option>
+              <option value="horizontal">横向</option>
+            </select>
+          </label>
+          <label>
+            <strong>对齐方式</strong>
+            <select id="alignSelect">
+              <option value="start">左对齐</option>
+              <option value="center">居中</option>
+              <option value="end">右对齐</option>
+            </select>
+          </label>
+          <label>
+            <input id="fillToggle" type="checkbox" />
+            填充背景色
+          </label>
+          <label>
+            <input id="bgColor" type="color" value="#ffffff" />
+          </label>
+        </div>
+        <div class="control-row">
+          <label>
+            <strong>图片间距</strong>
+            <input id="gapInput" type="number" min="0" value="0" /> px
+          </label>
+          <label>
+            <strong>外边距</strong>
+            <input id="paddingInput" type="number" min="0" value="0" /> px
+          </label>
+          <label>
+            <strong>尺寸统一</strong>
+            <select id="resizeMode">
+              <option value="none">保持原始尺寸</option>
+              <option value="max">按最大尺寸缩放</option>
+              <option value="min">按最小尺寸缩放</option>
+              <option value="custom">指定尺寸</option>
+            </select>
+          </label>
+          <label>
+            <strong>指定宽</strong>
+            <input id="targetWidth" type="number" min="1" value="1080" /> px
+          </label>
+          <label>
+            <strong>指定高</strong>
+            <input id="targetHeight" type="number" min="1" value="1920" /> px
+          </label>
+        </div>
+        <p class="tip">对齐方式会随拼接方向变化；尺寸统一按最大、最小或指定尺寸等比缩放。</p>
+      </div>
+
+      <div class="actions">
+        <button id="stitchButton" class="button" type="button">开始拼接</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>图片列表</h2>
+      <div id="previewList" class="preview-list">
+        <div class="preview-placeholder">还没有添加图片</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>拼接结果</h2>
+      <div class="result-actions">
+        <a id="downloadLink" class="button disabled" href="#" aria-disabled="true">下载图片</a>
+        <button id="copyButton" class="button secondary" type="button" disabled>复制图片</button>
+      </div>
+      <canvas id="resultCanvas"></canvas>
+      <p id="resultTip" class="tip">生成后可下载或复制。</p>
+    </section>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const dropZone = document.getElementById("dropZone");
+    const previewList = document.getElementById("previewList");
+    const stitchButton = document.getElementById("stitchButton");
+    const clearButton = document.getElementById("clearButton");
+    const resultCanvas = document.getElementById("resultCanvas");
+    const downloadLink = document.getElementById("downloadLink");
+    const copyButton = document.getElementById("copyButton");
+    const resultTip = document.getElementById("resultTip");
+    const directionSelect = document.getElementById("directionSelect");
+    const alignSelect = document.getElementById("alignSelect");
+    const fillToggle = document.getElementById("fillToggle");
+    const bgColor = document.getElementById("bgColor");
+    const gapInput = document.getElementById("gapInput");
+    const paddingInput = document.getElementById("paddingInput");
+    const resizeMode = document.getElementById("resizeMode");
+    const targetWidth = document.getElementById("targetWidth");
+    const targetHeight = document.getElementById("targetHeight");
+
+    const state = {
+      items: [],
+      downloadUrl: null
+    };
+
+    const alignLabels = {
+      vertical: {
+        start: "左对齐",
+        center: "居中",
+        end: "右对齐"
+      },
+      horizontal: {
+        start: "上对齐",
+        center: "居中",
+        end: "下对齐"
+      }
+    };
+
+    function setResultTip(message, isError = false) {
+      resultTip.textContent = message;
+      resultTip.classList.toggle("error", isError);
+    }
+
+    function revokeDownloadUrl() {
+      if (state.downloadUrl) {
+        URL.revokeObjectURL(state.downloadUrl);
+        state.downloadUrl = null;
+      }
+    }
+
+    function resetResult() {
+      revokeDownloadUrl();
+      downloadLink.classList.add("disabled");
+      downloadLink.setAttribute("aria-disabled", "true");
+      downloadLink.removeAttribute("download");
+      downloadLink.href = "#";
+      copyButton.disabled = true;
+      resultCanvas.width = 1;
+      resultCanvas.height = 1;
+      const ctx = resultCanvas.getContext("2d");
+      ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
+      setResultTip("生成后可下载或复制。");
+    }
+
+    function updateAlignOptions() {
+      const labels = alignLabels[directionSelect.value];
+      Array.from(alignSelect.options).forEach((option) => {
+        option.textContent = labels[option.value];
+      });
+    }
+
+    function updateBackgroundState() {
+      bgColor.disabled = !fillToggle.checked;
+    }
+
+    function updateResizeState() {
+      const isCustom = resizeMode.value === "custom";
+      targetWidth.disabled = !isCustom;
+      targetHeight.disabled = !isCustom;
+    }
+
+    function parseNumberInput(input, fallback = 0) {
+      const value = Number(input.value);
+      if (Number.isFinite(value) && value >= 0) {
+        return value;
+      }
+      return fallback;
+    }
+
+    function getBlobExtension(type) {
+      if (!type || !type.includes("/")) {
+        return "png";
+      }
+      return type.split("/")[1].split("+")[0] || "png";
+    }
+
+    function normalizeImageFile(fileLike, prefix = "image") {
+      if (!fileLike) {
+        return null;
+      }
+
+      const type = fileLike.type || "image/png";
+      const extension = getBlobExtension(type);
+      const name = fileLike.name && fileLike.name.trim()
+        ? fileLike.name
+        : `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 6)}.${extension}`;
+
+      if (fileLike instanceof File && fileLike.name && fileLike.name.trim()) {
+        return fileLike;
+      }
+
+      try {
+        return new File([fileLike], name, { type });
+      } catch (error) {
+        fileLike.name = name;
+        return fileLike;
+      }
+    }
+
+    function createImageItem(file) {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      const item = {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        file,
+        name: file.name || "未命名图片",
+        url,
+        img,
+        width: 0,
+        height: 0,
+        ready: null
+      };
+
+      item.ready = new Promise((resolve, reject) => {
+        img.onload = () => {
+          item.width = img.naturalWidth;
+          item.height = img.naturalHeight;
+          resolve();
+        };
+        img.onerror = () => reject(new Error(`${item.name} 加载失败`));
+      });
+
+      img.src = url;
+      return item;
+    }
+
+    function addFiles(files, source = "文件") {
+      const validFiles = Array.from(files)
+        .map((file) => normalizeImageFile(file, source === "剪贴板" ? "clipboard-image" : "image"))
+        .filter((file) => file && (file.type || "").startsWith("image/"));
+
+      if (!validFiles.length) {
+        setResultTip("没有检测到可用的图片。", true);
+        return;
+      }
+
+      validFiles.forEach((file) => {
+        const item = createImageItem(file);
+        state.items.push(item);
+        item.ready
+          .then(renderPreviewList)
+          .catch(() => {
+            removeItem(item.id);
+            setResultTip(`${item.name} 加载失败`, true);
+          });
+      });
+
+      renderPreviewList();
+      resetResult();
+      if (source === "剪贴板") {
+        setResultTip(`已从剪贴板添加 ${validFiles.length} 张图片。`);
+      }
+    }
+
+    function getDroppedFiles(dataTransfer) {
+      if (!dataTransfer) {
+        return [];
+      }
+
+      if (dataTransfer.files && dataTransfer.files.length) {
+        return Array.from(dataTransfer.files);
+      }
+
+      if (dataTransfer.items && dataTransfer.items.length) {
+        return Array.from(dataTransfer.items)
+          .filter((item) => item.kind === "file")
+          .map((item) => item.getAsFile())
+          .filter(Boolean);
+      }
+
+      return [];
+    }
+
+    function getClipboardFiles(clipboardData) {
+      if (!clipboardData || !clipboardData.items) {
+        return [];
+      }
+
+      return Array.from(clipboardData.items)
+        .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+        .map((item) => item.getAsFile())
+        .filter(Boolean);
+    }
+
+    function handlePaste(event) {
+      const files = getClipboardFiles(event.clipboardData);
+      if (!files.length) {
+        return;
+      }
+      event.preventDefault();
+      addFiles(files, "剪贴板");
+    }
+
+    function removeItem(id) {
+      const index = state.items.findIndex((item) => item.id === id);
+      if (index === -1) {
+        return;
+      }
+      const [removed] = state.items.splice(index, 1);
+      URL.revokeObjectURL(removed.url);
+      renderPreviewList();
+      resetResult();
+    }
+
+    function moveItem(id, direction) {
+      const index = state.items.findIndex((item) => item.id === id);
+      if (index === -1) {
+        return;
+      }
+
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= state.items.length) {
+        return;
+      }
+
+      const [item] = state.items.splice(index, 1);
+      state.items.splice(newIndex, 0, item);
+      renderPreviewList();
+      resetResult();
+    }
+
+    function renderPreviewList() {
+      previewList.innerHTML = "";
+
+      if (!state.items.length) {
+        const placeholder = document.createElement("div");
+        placeholder.className = "preview-placeholder";
+        placeholder.textContent = "还没有添加图片";
+        previewList.appendChild(placeholder);
+        return;
+      }
+
+      state.items.forEach((item, index) => {
+        const card = document.createElement("div");
+        card.className = "preview-item";
+
+        const img = document.createElement("img");
+        img.src = item.url;
+        img.alt = item.name;
+
+        const info = document.createElement("div");
+        info.className = "preview-info";
+
+        const title = document.createElement("strong");
+        title.textContent = item.name;
+
+        const size = document.createElement("span");
+        size.textContent = item.width
+          ? `${item.width} × ${item.height}px`
+          : "图片加载中…";
+
+        info.appendChild(title);
+        info.appendChild(size);
+
+        const actions = document.createElement("div");
+        actions.className = "preview-actions";
+
+        const upButton = document.createElement("button");
+        upButton.type = "button";
+        upButton.dataset.action = "up";
+        upButton.dataset.id = item.id;
+        upButton.textContent = "上移";
+        upButton.disabled = index === 0;
+
+        const downButton = document.createElement("button");
+        downButton.type = "button";
+        downButton.dataset.action = "down";
+        downButton.dataset.id = item.id;
+        downButton.textContent = "下移";
+        downButton.disabled = index === state.items.length - 1;
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.dataset.action = "remove";
+        removeButton.dataset.id = item.id;
+        removeButton.textContent = "移除";
+
+        actions.appendChild(upButton);
+        actions.appendChild(downButton);
+        actions.appendChild(removeButton);
+
+        card.appendChild(img);
+        card.appendChild(info);
+        card.appendChild(actions);
+        previewList.appendChild(card);
+      });
+    }
+
+    async function stitchImages() {
+      if (!state.items.length) {
+        setResultTip("请先添加图片。", true);
+        return;
+      }
+
+      try {
+        await Promise.all(state.items.map((item) => item.ready));
+      } catch (error) {
+        setResultTip("有图片加载失败，请移除后重试。", true);
+        return;
+      }
+
+      const direction = directionSelect.value;
+      const align = alignSelect.value;
+      const fillBackground = fillToggle.checked;
+      const gap = parseNumberInput(gapInput, 0);
+      const padding = parseNumberInput(paddingInput, 0);
+      const resize = resizeMode.value;
+
+      const maxWidth = Math.max(...state.items.map((item) => item.width));
+      const maxHeight = Math.max(...state.items.map((item) => item.height));
+      const minWidth = Math.min(...state.items.map((item) => item.width));
+      const minHeight = Math.min(...state.items.map((item) => item.height));
+
+      const scaledItems = state.items.map((item) => {
+        let scale = 1;
+
+        if (resize === "max") {
+          scale = Math.min(maxWidth / item.width, maxHeight / item.height);
+        } else if (resize === "min") {
+          scale = Math.min(minWidth / item.width, minHeight / item.height);
+        } else if (resize === "custom") {
+          const customWidth = Math.max(1, parseNumberInput(targetWidth, item.width));
+          const customHeight = Math.max(1, parseNumberInput(targetHeight, item.height));
+          scale = Math.min(customWidth / item.width, customHeight / item.height);
+        }
+
+        if (!Number.isFinite(scale) || scale <= 0) {
+          scale = 1;
+        }
+
+        return {
+          ...item,
+          drawWidth: Math.max(1, Math.round(item.width * scale)),
+          drawHeight: Math.max(1, Math.round(item.height * scale))
+        };
+      });
+
+      const widths = scaledItems.map((item) => item.drawWidth);
+      const heights = scaledItems.map((item) => item.drawHeight);
+
+      const totalWidth = direction === "vertical"
+        ? Math.max(...widths) + padding * 2
+        : widths.reduce((sum, value) => sum + value, 0) + gap * (scaledItems.length - 1) + padding * 2;
+      const totalHeight = direction === "vertical"
+        ? heights.reduce((sum, value) => sum + value, 0) + gap * (scaledItems.length - 1) + padding * 2
+        : Math.max(...heights) + padding * 2;
+
+      resultCanvas.width = totalWidth;
+      resultCanvas.height = totalHeight;
+
+      const ctx = resultCanvas.getContext("2d");
+      ctx.clearRect(0, 0, totalWidth, totalHeight);
+
+      if (fillBackground) {
+        ctx.fillStyle = bgColor.value;
+        ctx.fillRect(0, 0, totalWidth, totalHeight);
+      }
+
+      if (direction === "vertical") {
+        let offsetY = padding;
+        scaledItems.forEach((item) => {
+          let offsetX = padding;
+          if (align === "center") {
+            offsetX = padding + (totalWidth - padding * 2 - item.drawWidth) / 2;
+          } else if (align === "end") {
+            offsetX = totalWidth - padding - item.drawWidth;
+          }
+
+          ctx.drawImage(item.img, offsetX, offsetY, item.drawWidth, item.drawHeight);
+          offsetY += item.drawHeight + gap;
+        });
+      } else {
+        let offsetX = padding;
+        scaledItems.forEach((item) => {
+          let offsetY = padding;
+          if (align === "center") {
+            offsetY = padding + (totalHeight - padding * 2 - item.drawHeight) / 2;
+          } else if (align === "end") {
+            offsetY = totalHeight - padding - item.drawHeight;
+          }
+
+          ctx.drawImage(item.img, offsetX, offsetY, item.drawWidth, item.drawHeight);
+          offsetX += item.drawWidth + gap;
+        });
+      }
+
+      const directionLabel = direction === "vertical" ? "纵向" : "横向";
+      const resizeLabel = resizeMode.options[resizeMode.selectedIndex].textContent;
+      setResultTip(`已生成 ${totalWidth} × ${totalHeight}px，${directionLabel} / ${resizeLabel}。`);
+
+      downloadLink.classList.remove("disabled");
+      downloadLink.setAttribute("aria-disabled", "false");
+      downloadLink.setAttribute("download", "stitched.png");
+      copyButton.disabled = false;
+
+      resultCanvas.toBlob((blob) => {
+        if (!blob) {
+          setResultTip("生成结果失败，请重试。", true);
+          return;
+        }
+
+        revokeDownloadUrl();
+        state.downloadUrl = URL.createObjectURL(blob);
+        downloadLink.href = state.downloadUrl;
+      }, "image/png");
+    }
+
+    async function copyResult() {
+      if (!navigator.clipboard || !window.ClipboardItem) {
+        setResultTip("当前浏览器不支持直接复制图片，请改用下载。", true);
+        return;
+      }
+
+      resultCanvas.toBlob(async (blob) => {
+        if (!blob) {
+          setResultTip("复制失败，结果图片为空。", true);
+          return;
+        }
+
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": blob })
+          ]);
+          setResultTip("图片已复制到剪贴板。");
+        } catch (error) {
+          setResultTip("复制失败，请确认浏览器权限或改用下载。", true);
+        }
+      }, "image/png");
+    }
+
+    function clearAll() {
+      state.items.forEach((item) => URL.revokeObjectURL(item.url));
+      state.items = [];
+      renderPreviewList();
+      resetResult();
+    }
+
+    fileInput.addEventListener("change", (event) => {
+      addFiles(event.target.files, "文件");
+      event.target.value = "";
+    });
+
+    dropZone.addEventListener("click", () => dropZone.focus());
+
+    dropZone.addEventListener("dragenter", (event) => {
+      event.preventDefault();
+      dropZone.classList.add("dragover");
+    });
+
+    dropZone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+    });
+
+    dropZone.addEventListener("dragleave", (event) => {
+      if (!event.relatedTarget || !dropZone.contains(event.relatedTarget)) {
+        dropZone.classList.remove("dragover");
+      }
+    });
+
+    dropZone.addEventListener("dragend", () => {
+      dropZone.classList.remove("dragover");
+    });
+
+    dropZone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      dropZone.classList.remove("dragover");
+      addFiles(getDroppedFiles(event.dataTransfer), "拖拽");
+    });
+
+    document.addEventListener("dragover", (event) => {
+      event.preventDefault();
+    });
+
+    document.addEventListener("drop", (event) => {
+      event.preventDefault();
+    });
+
+    document.addEventListener("paste", handlePaste);
+
+    previewList.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) {
+        return;
+      }
+
+      const { id, action } = button.dataset;
+      if (action === "remove") {
+        removeItem(id);
+      } else if (action === "up") {
+        moveItem(id, -1);
+      } else if (action === "down") {
+        moveItem(id, 1);
+      }
+    });
+
+    directionSelect.addEventListener("change", () => {
+      updateAlignOptions();
+      resetResult();
+    });
+
+    alignSelect.addEventListener("change", resetResult);
+
+    fillToggle.addEventListener("change", () => {
+      updateBackgroundState();
+      resetResult();
+    });
+
+    bgColor.addEventListener("change", resetResult);
+    gapInput.addEventListener("change", resetResult);
+    paddingInput.addEventListener("change", resetResult);
+
+    resizeMode.addEventListener("change", () => {
+      updateResizeState();
+      resetResult();
+    });
+
+    targetWidth.addEventListener("change", resetResult);
+    targetHeight.addEventListener("change", resetResult);
+
+    stitchButton.addEventListener("click", stitchImages);
+    clearButton.addEventListener("click", clearAll);
+    copyButton.addEventListener("click", copyResult);
+
+    window.addEventListener("beforeunload", () => {
+      state.items.forEach((item) => URL.revokeObjectURL(item.url));
+      revokeDownloadUrl();
+    });
+
+    updateAlignOptions();
+    updateBackgroundState();
+    updateResizeState();
+    renderPreviewList();
+    resetResult();
+  </script>
+</body>
+</html>

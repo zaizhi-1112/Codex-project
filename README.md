@@ -19,6 +19,9 @@
 | 项目 | 简介 | 目录 | 说明文档 |
 | --- | --- | --- | --- |
 | AI 新闻助手 | 抓取多信源新闻并筛选、去重、生成精选摘要 | `projects/ai-news-assistant` | `projects/ai-news-assistant/README.md` |
+| 桌面倒计时提醒器 | 支持多倒计时、声音提醒、桌面通知和浮窗提示 | `projects/reminder-clock` | `projects/reminder-clock/README.md` |
+| 图片无缝拼接工具 | 支持纵横拼接、间距背景设置、下载和复制图片 | `projects/image-stitcher` | `projects/image-stitcher/README.md` |
+| 视频转 GIF 工具 | 支持本地上传视频并在浏览器内转换和下载 GIF | `projects/video-to-gif` | `projects/video-to-gif/README.md` |
 
 ## 统一目录规范
 
